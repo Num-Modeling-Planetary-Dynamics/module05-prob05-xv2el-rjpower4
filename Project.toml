@@ -1,9 +1,0 @@
-name = "EAPS"
-uuid = "9ed739f0-3dba-11ed-0118-31286a9ac5c7"
-authors = ["Rolfe Power <rpower@purdue.edu>"]
-
-[deps]
-CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
-GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
-LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
