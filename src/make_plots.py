@@ -56,8 +56,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-# if __name__ == "__main__":
-#     datasets = main()
-#     for ds in datasets:
-#         f, a = plot_dataset(ds)
-#         f.savefig(ds.output_path(), dpi=300)
