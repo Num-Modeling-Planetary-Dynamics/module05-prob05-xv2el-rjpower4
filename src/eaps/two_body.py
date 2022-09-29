@@ -209,7 +209,12 @@ class KeplerianElements:
         
 
     def to_inertial_states(self, gm: float):
-        pass
+        pstates = self.to_perifocal_states(gm)
+        rotmats = self.perifocal_to_inertial_rotation_matrix()
+        out = np.zeros_like(pstates)
+        out[:3] =  np.einsum("...jk,k...->j...", rotmats, pstates[:3,:])
+        out[3:] =  np.einsum("...jk,k...->j...", rotmats, pstates[3:,:])
+        return out
 
     @classmethod
     def from_states(cls, gm: float, states: np.ndarray):

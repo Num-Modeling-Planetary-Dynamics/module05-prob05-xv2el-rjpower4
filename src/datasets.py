@@ -61,6 +61,15 @@ class StateDataset(Dataset):
         name = self.path.stem.strip("-XV") + "-EL" + self.path.suffix
         return parent / name
 
+class RoundTripStateDataset(StateDataset):
+    COLUMN_NAMES = ["t", "x", "y", "z", "vx", "vy", "vz"]
+    REGEX_FILTER = re.compile(r"id\d{6}-EL-TO-XV.csv")
+
+    def output_path(self) -> pathlib.Path:
+        parent = self.path.parent.resolve().parent.resolve() / "plots"
+        name = self.path.stem
+        name += ".png"
+        return parent / name
 
 class ElementDataset(Dataset):
     COLUMN_NAMES = [
@@ -90,7 +99,15 @@ class ElementDataset(Dataset):
         )
         return (self.data.t.to_numpy(), out)
 
-    def output_path(self) -> pathlib.Path:
+    def data_output_path(self):
+        parent = self.path.parent.resolve().parent.resolve() / "data"
+        name = self.path.stem.strip("-EL").strip("-XV") + "-EL-TO-XV" + ".csv"
+        return parent / name
+
+    def output_path(self, *args, ftype=".png") -> pathlib.Path:
         parent = self.path.parent.resolve().parent.resolve() / "plots"
-        name = self.path.stem.strip("-XV") + "-EL" + ".png"
+        name = self.path.stem.strip("-XV") + "-EL"
+        for s in args:
+            name += s
+        name += ".png"
         return parent / name
