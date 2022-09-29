@@ -29,8 +29,20 @@ def apsis_radii(sma, ecc):
     return (sma - ae, sma + ae)
 
 
+def circular_orbit_speed(gm, sma):
+    return np.sqrt(gm / sma)
+
+
 def two_body_radius(sma, ecc, ta):
     return semi_latus_rectum(sma, ecc) / (1 + ecc * np.cos(ta))
+
+
+def specific_angular_momentum(gm, sma, ecc):
+    return np.sqrt(gm * sma * (1.0 - ecc**2))
+
+
+def areal_velocity(gm, sma, ecc):
+    return specific_angular_momentum(gm, sma, ecc) / 2.0
 
 
 # ----------------------------------------------------------------------------------------
@@ -47,6 +59,19 @@ class KeplerianElements:
         self._aop = _as_np_array(aop)
         self._raan = _as_np_array(raan)
         self._ta = _as_np_array(ta)
+
+        self.count = np.max(
+            np.array(
+                [
+                    len(self._sma),
+                    len(self._ecc),
+                    len(self._inc),
+                    len(self._aop),
+                    len(self._raan),
+                    len(self._ta),
+                ]
+            )
+        )
 
         if np.any(self._ecc < 0.0):
             raise ValueError("negative eccentricity")
@@ -129,7 +154,9 @@ class KeplerianElements:
         return -gm / (2.0 * self.semi_major_axis())
 
     def specific_angular_momentum(self, gm: float) -> np.ndarray[np.float64]:
-        return np.sqrt(gm * self.semi_major_axis() * (1.0 - self.eccentricity() ** 2))
+        return specific_angular_momentum(
+            gm, self.semi_major_axis(), self.eccentricity()
+        )
 
     def speed_at(self, gm: float, ta: float) -> np.ndarray[np.float64]:
         energy = self.specific_energy(gm)
@@ -138,13 +165,51 @@ class KeplerianElements:
 
     def speed(self, gm: float) -> np.ndarray[np.float64]:
         return self.speed_at(gm, self.true_anomaly())
-        
+
     def to_perifocal_states(self, gm: float):
+        ta = self.true_anomaly()
+        h = self.specific_angular_momentum(gm)
         radius = self.radius()
-        x = np.cos(self.true_anomaly()) * radius
-        y = np.sin(self.true_anomaly()) * radius
-        z = np.zeros(x.shape)
+
+        cta = np.cos(ta)
+        sta = np.sin(ta)
+
+        states = np.zeros((6, self.count))
+
+        states[0] = cta * radius  # Radial component
+        states[1] = sta * radius  # Tangential component
+        states[3] = gm / h * self.eccentricity() * sta  # Radial component
+        states[4] = gm / h * (1 + self.eccentricity() * cta)  # Tangential component
+
+        return states
+
+    def perifocal_to_inertial_rotation_matrix(self):
+        sAop = np.sin(self.argument_of_periapsis())
+        cAop = np.cos(self.argument_of_periapsis())
+        sRaan = np.sin(self.right_ascension())
+        cRaan = np.cos(self.right_ascension())
+        sInc = np.sin(self.inclination())
+        cInc = np.cos(self.inclination())
         
+        out = np.zeros((self.count, 3, 3))
+
+        out[:, 0, 0] =  cRaan * cAop - sRaan * sAop * cInc
+        out[:, 0, 1] = -cRaan * sAop - sRaan * cAop * cInc
+        out[:, 0, 2] =  sRaan * sInc
+
+        out[:, 1, 0] =  sRaan * cAop + cRaan * sAop * cInc
+        out[:, 1, 1] = -sRaan * sAop + cRaan * cAop * cInc
+        out[:, 1, 2] = -cRaan * sInc
+
+        out[:, 2, 0] = sAop * sInc
+        out[:, 2, 1] = cAop * sInc
+        out[:, 2, 2] = cInc
+
+        return out
+        
+
+    def to_inertial_states(self, gm: float):
+        pass
 
     @classmethod
     def from_states(cls, gm: float, states: np.ndarray):

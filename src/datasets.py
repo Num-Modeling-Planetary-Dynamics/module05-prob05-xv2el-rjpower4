@@ -2,6 +2,7 @@ import pathlib
 import re
 import pandas as pd
 import numpy as np
+from eaps import KeplerianElements
 
 # ----------------------------------------------------------------------------------------
 # Path Utilities
@@ -78,14 +79,15 @@ class ElementDataset(Dataset):
         self.name = path.name
         self.data = pd.read_csv(self.path, skiprows=1, names=ElementDataset.COLUMN_NAMES)
 
-    def times_and_states(self) -> np.ndarray:
-        out = np.zeros((6, self.count()))
-        out[0, :] = self.data.x
-        out[1, :] = self.data.y
-        out[2, :] = self.data.z
-        out[3, :] = self.data.vx
-        out[4, :] = self.data.vy
-        out[5, :] = self.data.vz
+    def times_and_elements(self) -> np.ndarray:
+        out = KeplerianElements(
+            self.data.a,
+            ecc=self.data.e,
+            inc=self.data.inclination,
+            raan=self.data.lon_asc_node,
+            aop=self.data.arg_peri,
+            ta=self.data.true_anom
+        )
         return (self.data.t.to_numpy(), out)
 
     def output_path(self) -> pathlib.Path:

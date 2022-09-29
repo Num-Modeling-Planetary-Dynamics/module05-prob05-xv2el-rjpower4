@@ -1,11 +1,11 @@
 import pandas as pd
 import eaps
-from datasets import StateDataset, data_directory
+from datasets import StateDataset, ElementDataset, data_directory
 
 # ----------------------------------------------------------------------------------------
 # Conversion
 # ----------------------------------------------------------------------------------------
-def process_dataset(ds: StateDataset):
+def process_state_dataset(ds: StateDataset):
     (t, ss) = ds.times_and_states()
     elements = eaps.KeplerianElements.from_states(1.0, ss)
     return pd.DataFrame(
@@ -20,13 +20,16 @@ def process_dataset(ds: StateDataset):
         }
     )
 
+def process_element_dataset(ds: ElementDataset):
+    pass
+
 
 # ----------------------------------------------------------------------------------------
 # Entry point
 # ----------------------------------------------------------------------------------------
 def main():
     datasets = StateDataset.load_all(data_directory())
-    results = [process_dataset(ds) for ds in datasets]
+    results = [process_state_dataset(ds) for ds in datasets]
 
     for (ds, res) in zip(datasets, results):
         res.to_csv(ds.output_path())
